@@ -24,12 +24,15 @@ import {
 import { RadioManager } from "./radio-manager.js";
 import { getRecentTracks } from "./recent-tracks.js";
 import { STATION_SELECT_CUSTOM_ID, findStation, stations } from "./stations.js";
+import { getFfmpegDescription } from "./ffmpeg-radio.js";
 
 const config = loadConfig();
 const radio = new RadioManager();
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
+
+console.log(`[radio] Using ${getFfmpegDescription()}`);
 
 client.once(Events.ClientReady, (readyClient) => {
   readyClient.user.setActivity("Music", { type: ActivityType.Listening });

@@ -31,7 +31,7 @@ privileged intents are required.
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/discord-radio-bot.git
+git clone https://github.com/ThePlonked/radio-bot.git
 cd discord-radio-bot
 pnpm install
 ```
@@ -116,6 +116,7 @@ outbound HTTPS. Short-lived serverless functions are generally unsuitable.
 | `DISCORD_TOKEN` | Yes | Secret bot token from the Developer Portal. |
 | `DISCORD_CLIENT_ID` | Yes | Application ID used to register commands. |
 | `DISCORD_GUILD_ID` | No | Development server for immediate command updates. |
+| `FFMPEG_PATH` | No | FFmpeg executable; `/usr/bin/ffmpeg` is recommended on Linux VPS hosts. |
 | `CAPITAL_STREAM_URL` | No | Overrides the built-in Capital stream. |
 | `KISS_STREAM_URL` | No | Bypasses discovery and uses this authorised endpoint. |
 | `BBC_1XTRA_STREAM_URL` | No | Overrides the built-in BBC Radio 1Xtra HLS feed. |
@@ -193,6 +194,22 @@ On a VPS, run `pnpm check:streams` from the same user and environment that runs
 the bot. The bot logs FFmpeg's exit code and final diagnostics when a feed ends,
 which will identify common DNS, TLS, HTTP 403, geoblocking, and codec failures.
 The managed FFmpeg input automatically reconnects interrupted live HTTP streams.
+
+An exit signal of `SIGSEGV` means FFmpeg itself crashed. On Debian or Ubuntu,
+install the distribution build and select it in `.env`:
+
+```bash
+sudo apt update
+sudo apt install -y ffmpeg
+command -v ffmpeg
+```
+
+```dotenv
+FFMPEG_PATH=/usr/bin/ffmpeg
+```
+
+Run `pnpm check:streams` again and restart the bot. Startup logs include the
+selected FFmpeg version and path, so you can confirm the override is active.
 
 ### A logo does not appear
 

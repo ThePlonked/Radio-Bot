@@ -1,9 +1,17 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import "dotenv/config";
+import {
+  spawn,
+  spawnSync,
+  type ChildProcessWithoutNullStreams,
+} from "node:child_process";
 import ffmpegModule from "ffmpeg-static";
 
 const bundledFfmpegPath = ffmpegModule as unknown as string | null;
-if (!bundledFfmpegPath) throw new Error("ffmpeg-static did not provide an executable.");
-const ffmpegPath: string = bundledFfmpegPath;
+const configuredFfmpegPath = process.env.FFMPEG_PATH?.trim();
+if (!configuredFfmpegPath && !bundledFfmpegPath) {
+  throw new Error("Set FFMPEG_PATH or install ffmpeg-static.");
+}
+const ffmpegPath: string = configuredFfmpegPath || bundledFfmpegPath || "ffmpeg";
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; DiscordRadioBot/1.0; +https://github.com/your-username/discord-radio-bot)";
@@ -11,6 +19,24 @@ const USER_AGENT =
 export interface RadioTranscoder {
   getDiagnostics: () => string;
   process: ChildProcessWithoutNullStreams;
+}
+
+export function getFfmpegDescription(): string {
+  const result = spawnSync(ffmpegPath, ["-version"], {
+    encoding: "utf8",
+    timeout: 5_000,
+    windowsHide: true,
+  });
+  if (result.error) {
+    throw new Error(`FFmpeg could not be started from ${ffmpegPath}: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `FFmpeg version check failed from ${ffmpegPath}: ${result.stderr.trim() || "unknown error"}`,
+    );
+  }
+  const version = result.stdout.split(/\r?\n/u)[0]?.trim() || "FFmpeg version unknown";
+  return `${version} [${ffmpegPath}]`;
 }
 
 export function spawnRadioTranscoder(
