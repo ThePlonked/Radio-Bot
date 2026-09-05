@@ -13,12 +13,16 @@ import {
   errorEmbed,
   idleStatusEmbed,
   nowPlayingEmbed,
+  radioHelpEmbed,
+  recentTracksEmbed,
+  stationDirectoryEmbed,
   stationPickerEmbed,
   statusEmbed,
   stoppedEmbed,
   tuningEmbed,
 } from "./embeds.js";
 import { RadioManager } from "./radio-manager.js";
+import { getRecentTracks } from "./recent-tracks.js";
 import { STATION_SELECT_CUSTOM_ID, findStation, stations } from "./stations.js";
 
 const config = loadConfig();
@@ -66,6 +70,49 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const station = radio.getStation(interaction.guildId);
         await interaction.reply({
           embeds: [station ? statusEmbed(station) : idleStatusEmbed()],
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      if (interaction.commandName === "recent") {
+        const station = radio.getStation(interaction.guildId);
+        if (!station) {
+          await interaction.reply({
+            embeds: [errorEmbed("Nothing is playing", "Use `/play` to choose a station first.")],
+            flags: MessageFlags.Ephemeral,
+          });
+          return;
+        }
+
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        try {
+          await interaction.editReply({
+            embeds: [recentTracksEmbed(station, await getRecentTracks(station))],
+          });
+        } catch (error) {
+          console.error(`Track history failed for ${station.name}:`, error);
+          await interaction.editReply({
+            embeds: [errorEmbed(
+              "Track history unavailable",
+              "The broadcaster's track service could not be reached. Try again shortly.",
+            )],
+          });
+        }
+        return;
+      }
+
+      if (interaction.commandName === "stations") {
+        await interaction.reply({
+          embeds: [stationDirectoryEmbed()],
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      if (interaction.commandName === "radio-help") {
+        await interaction.reply({
+          embeds: [radioHelpEmbed()],
           flags: MessageFlags.Ephemeral,
         });
         return;

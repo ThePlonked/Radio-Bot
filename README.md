@@ -31,7 +31,7 @@ privileged intents are required.
 ## Installation
 
 ```bash
-git clone https://github.com/ThePlonked/radio-bot.git
+git clone https://github.com/YOUR_USERNAME/discord-radio-bot.git
 cd discord-radio-bot
 pnpm install
 ```
@@ -76,7 +76,10 @@ scope change.
 | --- | --- |
 | `/play` | Shows an embed and menu for choosing an available station. |
 | `/station` | Shows an embed for the station currently playing. |
+| `/recent` | Shows up to five recently played songs from the current station. |
+| `/stations` | Lists every available station with links and descriptions. |
 | `/stop` | Stops playback, disconnects, and confirms with an embed. |
+| `/radio-help` | Shows a compact guide to the bot's commands. |
 
 Join the desired voice channel before using `/play`. Every Discord server has
 an independent player and can listen to a different station.
@@ -134,6 +137,16 @@ FFmpeg reads the selected MP3 stream and the Discord voice library handles Opus
 audio, encryption, and the DAVE protocol. Unexpected stream failures retry five
 times with increasing delays before the bot disconnects.
 
+## Recent-track data
+
+`/recent` reads public metadata supplied by the broadcaster or its player:
+Capital's last-played page, KISS's Rayo player data, the BBC Radio & Music
+Services API, and TruckersFM's RadioCloud endpoint. LBC is speech radio and
+does not publish a song history, so the command reports that it is unavailable.
+
+These external page formats and APIs can change independently of the bot. Use
+`pnpm check:metadata` to verify every supported metadata source.
+
 ## Adding a station
 
 Add an entry to `src/stations.ts` containing a unique ID, name, description,
@@ -159,6 +172,7 @@ Do not add temporary, authenticated, premium, or ad-free endpoints.
 | `pnpm test` | Run automated tests. |
 | `pnpm check` | Run linting, compilation, and tests. |
 | `pnpm check:streams` | Decode five seconds from each live station. |
+| `pnpm check:metadata` | Fetch recent tracks from each supported station. |
 | `pnpm build` | Compile TypeScript into `dist/`. |
 | `pnpm start` | Run the compiled production bot. |
 
@@ -174,6 +188,11 @@ Check `DISCORD_CLIENT_ID`, ensure the application was installed with the
 
 Check Speak permission, outbound UDP, and HTTP(S) access. Run
 `pnpm check:streams` and review the console for FFmpeg or voice errors.
+
+On a VPS, run `pnpm check:streams` from the same user and environment that runs
+the bot. The bot logs FFmpeg's exit code and final diagnostics when a feed ends,
+which will identify common DNS, TLS, HTTP 403, geoblocking, and codec failures.
+The managed FFmpeg input automatically reconnects interrupted live HTTP streams.
 
 ### A logo does not appear
 

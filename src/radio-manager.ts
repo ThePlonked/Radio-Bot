@@ -1,6 +1,7 @@
 import {
   AudioPlayerStatus,
   NoSubscriberBehavior,
+  StreamType,
   VoiceConnectionStatus,
   createAudioPlayer,
   createAudioResource,
@@ -10,6 +11,8 @@ import {
   type DiscordGatewayAdapterCreator,
   type VoiceConnection,
 } from "@discordjs/voice";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawnRadioTranscoder } from "./ffmpeg-radio.js";
 import type { RadioStation } from "./stations.js";
 import { resolveStationStreamUrl } from "./stream-resolver.js";
 
@@ -17,6 +20,7 @@ const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 20_000, 30_000] as const;
 
 interface RadioSession {
   connection: VoiceConnection;
+  ffmpeg?: ChildProcessWithoutNullStreams;
   guildId: string;
   player: AudioPlayer;
   restartTimer?: NodeJS.Timeout;
@@ -81,6 +85,7 @@ export class RadioManager {
     session.stopped = true;
     if (session.restartTimer) clearTimeout(session.restartTimer);
     if (session.stableTimer) clearTimeout(session.stableTimer);
+    this.stopFfmpeg(session);
     session.player.stop(true);
     session.connection.destroy();
     this.sessions.delete(guildId);
@@ -121,6 +126,7 @@ export class RadioManager {
 
   private scheduleRestart(session: RadioSession, reason: string): void {
     if (session.stopped || session.restartTimer || this.sessions.get(session.guildId) !== session) return;
+    this.stopFfmpeg(session);
     if (session.retryCount >= RETRY_DELAYS_MS.length) {
       console.error(`[radio:${session.guildId}] Stopped after repeated stream failures.`);
       this.stop(session.guildId);
@@ -143,8 +149,36 @@ export class RadioManager {
     if (session.stopped || this.sessions.get(session.guildId) !== session) return;
     const streamUrl = await resolveStationStreamUrl(session.station);
     if (session.stopped || this.sessions.get(session.guildId) !== session) return;
-    session.player.play(createAudioResource(streamUrl, {
+    this.stopFfmpeg(session);
+
+    const transcoder = spawnRadioTranscoder(streamUrl);
+    const child = transcoder.process;
+    session.ffmpeg = child;
+    child.once("error", (error) => {
+      console.error(`[radio:${session.guildId}] FFmpeg could not start:`, error.message);
+      this.scheduleRestart(session, "FFmpeg could not start");
+    });
+    child.once("close", (code, signal) => {
+      if (session.ffmpeg !== child) return;
+      delete session.ffmpeg;
+      if (session.stopped || this.sessions.get(session.guildId) !== session) return;
+      const diagnostics = transcoder.getDiagnostics();
+      console.error(
+        `[radio:${session.guildId}] ${session.station.name} FFmpeg exited ` +
+        `(code=${String(code)}, signal=${signal ?? "none"}).` +
+        (diagnostics ? `\n${diagnostics}` : " No FFmpeg diagnostics were produced."),
+      );
+    });
+
+    session.player.play(createAudioResource(child.stdout, {
+      inputType: StreamType.OggOpus,
       metadata: { stationId: session.station.id },
     }));
+  }
+
+  private stopFfmpeg(session: RadioSession): void {
+    const child = session.ffmpeg;
+    delete session.ffmpeg;
+    if (child && !child.killed) child.kill("SIGKILL");
   }
 }

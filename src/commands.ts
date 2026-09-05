@@ -12,6 +12,21 @@ export const commandDefinitions: RESTPostAPIApplicationCommandsJSONBody[] = [
     .setDMPermission(false)
     .toJSON(),
   new SlashCommandBuilder()
+    .setName("recent")
+    .setDescription("Show the last five songs played on the current station")
+    .setDMPermission(false)
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName("stations")
+    .setDescription("Show every available radio station")
+    .setDMPermission(false)
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName("radio-help")
+    .setDescription("Show the radio bot command guide")
+    .setDMPermission(false)
+    .toJSON(),
+  new SlashCommandBuilder()
     .setName("stop")
     .setDescription("Stop the radio and disconnect the bot")
     .setDMPermission(false)
