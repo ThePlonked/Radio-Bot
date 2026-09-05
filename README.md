@@ -3,15 +3,15 @@
 ![Discord Radio Bot icon](assets/bot-icon.png)
 
 An open-source Discord bot that plays live internet radio in voice channels.
-The initial station list contains Capital and KISS and is designed to be easy
-to extend.
+It includes Capital, KISS, BBC Radio 1Xtra, TruckersFM, and LBC, and is designed
+to be easy to extend.
 
 ## Requirements
 
 - [Node.js](https://nodejs.org/) 22.12 or newer
 - [pnpm](https://pnpm.io/) 11 or newer
 - A Discord application and bot account
-- A host with outbound HTTPS and UDP access
+- A host with outbound HTTP(S) and UDP access
 
 FFmpeg is installed through `ffmpeg-static`, so a system installation is not
 normally required.
@@ -74,7 +74,7 @@ scope change.
 
 | Command | Description |
 | --- | --- |
-| `/play` | Shows an embed and menu for choosing Capital or KISS. |
+| `/play` | Shows an embed and menu for choosing an available station. |
 | `/station` | Shows an embed for the station currently playing. |
 | `/stop` | Stops playback, disconnects, and confirms with an embed. |
 
@@ -115,15 +115,20 @@ outbound HTTPS. Short-lived serverless functions are generally unsuitable.
 | `DISCORD_GUILD_ID` | No | Development server for immediate command updates. |
 | `CAPITAL_STREAM_URL` | No | Overrides the built-in Capital stream. |
 | `KISS_STREAM_URL` | No | Bypasses discovery and uses this authorised endpoint. |
+| `BBC_1XTRA_STREAM_URL` | No | Overrides the built-in BBC Radio 1Xtra HLS feed. |
+| `TRUCKERSFM_STREAM_URL` | No | Overrides TruckersFM's published radio endpoint. |
+| `LBC_STREAM_URL` | No | Overrides the built-in LBC MP3 feed. |
 
 Never commit `.env`. Reset an exposed token immediately.
 
 ## How playback works
 
 The bot maintains one voice connection and audio player per Discord server.
-Capital exposes a stable MP3 feed. KISS requires listener-session and advertising
-parameters, so a fresh public player URL is resolved when playback begins. An
-explicit `KISS_STREAM_URL` bypasses discovery.
+Capital and LBC expose stable MP3 feeds. BBC Radio 1Xtra uses the BBC's HLS
+feed, and TruckersFM uses the endpoint published in its official playlist.
+KISS requires listener-session and advertising parameters, so a fresh public
+player URL is resolved when playback begins. An explicit `KISS_STREAM_URL`
+bypasses discovery.
 
 FFmpeg reads the selected MP3 stream and the Discord voice library handles Opus
 audio, encryption, and the DAVE protocol. Unexpected stream failures retry five
@@ -132,7 +137,7 @@ times with increasing delays before the bot disconnects.
 ## Adding a station
 
 Add an entry to `src/stations.ts` containing a unique ID, name, description,
-emoji, embed colour, official homepage, HTTPS logo, and legitimate direct audio
+emoji, embed colour, official homepage, HTTPS logo, and legitimate HTTP(S) audio
 URL. Then run:
 
 ```bash
@@ -167,7 +172,7 @@ Check `DISCORD_CLIENT_ID`, ensure the application was installed with the
 
 ### The bot joins but no audio plays
 
-Check Speak permission, outbound UDP, and HTTPS access. Run
+Check Speak permission, outbound UDP, and HTTP(S) access. Run
 `pnpm check:streams` and review the console for FFmpeg or voice errors.
 
 ### A logo does not appear
@@ -179,8 +184,8 @@ Discord must be able to fetch the station's `logoUrl`. Update the URL in
 
 This repository contains software only. It does not distribute recordings,
 subscriptions, broadcasting rights, music licences, or station logos. Capital,
-KISS, and related names and artwork belong to their respective owners and do
-not imply endorsement.
+KISS, BBC Radio 1Xtra, TruckersFM, LBC, and related names and artwork belong to
+their respective owners and do not imply endorsement.
 
 Operators are responsible for broadcaster terms, Discord's terms, copyright
 law, and any music, public-performance, or webcasting licences that apply where

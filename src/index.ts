@@ -1,4 +1,5 @@
 import {
+  ActivityType,
   ActionRowBuilder,
   Client,
   Events,
@@ -27,6 +28,7 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, (readyClient) => {
+  readyClient.user.setActivity("Music", { type: ActivityType.Listening });
   console.log(`Ready as ${readyClient.user.tag}.`);
 });
 

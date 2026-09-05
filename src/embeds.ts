@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import type { RadioStation } from "./stations.js";
+import { stations, type RadioStation } from "./stations.js";
 
 const DEFAULT_COLOR = 0x7c3aed;
 
@@ -21,7 +21,7 @@ export function stationPickerEmbed(): EmbedBuilder {
     )
     .addFields({
       name: "Available now",
-      value: "🎵 **Capital**\n💋 **KISS**",
+      value: stations.map((station) => `${station.emoji} **${station.name}**`).join("\n"),
     })
     .setFooter({ text: "You must be connected to a voice channel" });
 }
