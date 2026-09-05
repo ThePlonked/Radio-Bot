@@ -31,7 +31,7 @@ privileged intents are required.
 ## Installation
 
 ```bash
-git clone https://github.com/ThePlonked/discord-radio-bot.git
+git clone https://github.com/ThePlonked/radio-bot.git
 cd discord-radio-bot
 pnpm install
 ```
